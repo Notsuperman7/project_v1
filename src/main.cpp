@@ -62,6 +62,7 @@ void feed(void *parameter)
   while (1)
   {
     String got = Receive();
+    Serial.println(got);
     if(got =="F"|| got =="S"){            // F as finished postining, S as start in the beging to feed
       bool part_Detected = (digitalRead(iR1_pin) == LOW);
       bool no_part_Sorting = (digitalRead(Switch_pin) == HIGH);
@@ -80,6 +81,7 @@ void feed(void *parameter)
       }
 
     }
+    delay(1000);
     
   }
 }
