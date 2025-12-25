@@ -1,6 +1,9 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include "Sender.h"
 #include "Reciver.h"
+
 #define relay_pin 23
 #define iR1_pin 2
 #define iR2_pin 3
@@ -8,9 +11,9 @@
 #define Switch_pin 4
 
 #define forwardTime 1000
-#define BackwardTime 1000
-// int countParts = 0;
-// int oldcount = 0;
+#define BackwardTime 2000
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 class part
 {
@@ -35,29 +38,39 @@ void sort(void *parameter)
 
       if (currentPart.isWhite && currentPart.isBase)
       {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("White Base");
         Serial.println("White Base");
         Send("A");
       }
       else if (currentPart.isWhite && !currentPart.isBase)
       {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("White Lid");
         Serial.println("White Lid");
         Send("B");
       }
       else if (!currentPart.isWhite && currentPart.isBase)
       {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Black Base");
         Serial.println("Black Base");
         Send("C");
       }
       else if (!currentPart.isWhite && !currentPart.isBase)
       {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Black Lid");
         Serial.println("Black Lid");
         Send("D");
       }
     }
-    // oldcount = countParts;
     delay(1000);
   }
-  // sorting
 }
 
 void feed(void *parameter)
@@ -65,24 +78,24 @@ void feed(void *parameter)
   while (1)
   {
     String got = Receive();
-    Serial.println(got); // F as finished postining, S as start in the beging to feed
+    Serial.println(got);
     bool part_Detected = (digitalRead(iR1_pin) == HIGH);
     bool no_part_Sorting = (digitalRead(Switch_pin) == HIGH);
-    Serial.println("Part Detected:");
-    Serial.println(part_Detected);
-    Serial.println("No Part Sorting:");
-    Serial.println(no_part_Sorting);
+
+    // F as finished postining, S as start in the beging to feed
     if (no_part_Sorting && part_Detected && (got == "F" || got == "S"))
     {
       digitalWrite(relay_pin, LOW);
       delay(BackwardTime);
       digitalWrite(relay_pin, HIGH);
       delay(forwardTime);
-      // countParts++;
     }
-    else if (!part_Detected && no_part_Sorting) // if no part & no soerting means no parts
+    else if (!part_Detected && no_part_Sorting) // if no part & no sorting means no parts
     {
       Serial.println("no parts");
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("No Parts");
       Send("N");
     }
     delay(1500);
@@ -105,6 +118,11 @@ void setup()
   Serial.println("ready");
   Sender_Init();
   Receiver_Init();
+
+  Wire.begin(21, 22);
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
 
   xTaskCreate(
       feed,   // Function name of the task
